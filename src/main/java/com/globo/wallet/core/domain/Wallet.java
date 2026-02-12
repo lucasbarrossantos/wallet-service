@@ -1,7 +1,7 @@
 package com.globo.wallet.core.domain;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.Getter;
@@ -13,6 +13,6 @@ public class Wallet {
     private UUID id;
     private UUID userId;
     private BigDecimal balance;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

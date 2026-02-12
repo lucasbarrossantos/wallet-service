@@ -1,7 +1,7 @@
 package com.globo.wallet.core.usecase.transaction;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -35,17 +35,15 @@ public class ProcessTransactionUseCase implements ProcessTransactionPort {
     @Override
     @Transactional
     public Transaction execute(UUID userId, Transaction transaction) {
-        log.info("Processando transação do tipo {} para o usuário: {}", transaction.getType(), userId);
-
         Wallet wallet = getValidetedWallet(userId, transaction);
         BigDecimal newBalance = processTransactionAndUpdateBalance(wallet, transaction);
 
         wallet.setBalance(newBalance);
-        wallet.setUpdatedAt(OffsetDateTime.now());
+        wallet.setUpdatedAt(LocalDateTime.now());
         walletRepositoryPort.save(wallet);
 
         transaction.setWalletId(wallet.getId());
-        transaction.setCreatedAt(OffsetDateTime.now());
+        transaction.setCreatedAt(LocalDateTime.now());
         Transaction savedTransaction = transactionRepositoryPort.save(transaction);
 
         log.info("Transação processada com sucesso. Novo saldo: {}", newBalance);
@@ -64,7 +62,6 @@ public class ProcessTransactionUseCase implements ProcessTransactionPort {
     private void validateUser(UUID userId) {
         try {
             subscriptionClient.getUserById(userId);
-            log.info("Usuário {} validado com sucesso", userId);
         } catch (FeignException.NotFound e) {
             log.error("Usuário não encontrado: {}", userId);
             throw new UserNotFoundException("Usuário não encontrado: " + userId);

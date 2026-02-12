@@ -1,7 +1,7 @@
 package com.globo.wallet.adapter.http.dto.transaction;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.globo.wallet.core.domain.enums.TransactionType;
@@ -12,6 +12,6 @@ public record TransactionResponse(
     BigDecimal amount,
     TransactionType type,
     String description,
-    OffsetDateTime createdAt,
+    LocalDateTime createdAt,
     BigDecimal newBalance
 ) {}

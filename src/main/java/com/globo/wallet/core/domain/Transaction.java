@@ -1,7 +1,7 @@
 package com.globo.wallet.core.domain;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.globo.wallet.core.domain.enums.TransactionType;
@@ -17,5 +17,5 @@ public class Transaction {
     private BigDecimal amount;
     private TransactionType type;
     private String description;
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 }

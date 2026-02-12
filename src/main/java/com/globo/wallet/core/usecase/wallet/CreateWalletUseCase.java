@@ -1,7 +1,7 @@
 package com.globo.wallet.core.usecase.wallet;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 import com.globo.wallet.adapter.integration.subscription.SubscriptionClient;
 import com.globo.wallet.core.domain.Wallet;
@@ -39,8 +39,8 @@ public class CreateWalletUseCase implements CreateWalletPort {
             throw new WalletAlreadyExistsException("Usuário já possui uma carteira cadastrada");
         }
 
-        wallet.setCreatedAt(OffsetDateTime.now());
-        wallet.setUpdatedAt(OffsetDateTime.now());
+        wallet.setCreatedAt(LocalDateTime.now());
+        wallet.setUpdatedAt(LocalDateTime.now());
 
         return walletRepositoryPort.save(wallet);
     }

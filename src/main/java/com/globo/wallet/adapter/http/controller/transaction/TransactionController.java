@@ -36,8 +36,6 @@ public class TransactionController {
             @PathVariable UUID userId,
             @RequestBody @Valid TransactionRequest request) {
 
-        log.info("Recebida requisição de transação para usuário: {}, tipo: {}", userId, request.type());
-
         var transaction = transactionHttpMapper.toDomain(request);
         var processedTransaction = processTransactionPort.execute(userId, transaction);
 

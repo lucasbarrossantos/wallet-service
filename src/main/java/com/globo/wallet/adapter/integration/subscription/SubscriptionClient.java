@@ -7,7 +7,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "subscription-service", url = "${integration.subscription-service.url}")
+@FeignClient(name = "subscription-service", url = "${integrations.subscription-service.url}")
 public interface SubscriptionClient {
 
     @GetMapping("/users/{userId}")
