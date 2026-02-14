@@ -1,0 +1,10 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: wallet-group-dev
+      auto-offset-reset: earliest
+    topics:
+      debitSubscriptionPlan: payment-debit-subscription-plan-dev
+      debitAmount: payment-debit-amount-dev
+      creditRefund: payment-credit-refund-dev

@@ -1,0 +1,10 @@
+spring:
+  kafka:
+    bootstrap-servers: kafka-prod:9092
+    consumer:
+      group-id: wallet-group-prod
+      auto-offset-reset: latest
+    topics:
+      debitSubscriptionPlan: payment-debit-subscription-plan-prod
+      debitAmount: payment-debit-amount-prod
+      creditRefund: payment-credit-refund-prod

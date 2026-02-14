@@ -11,8 +11,8 @@ import com.globo.wallet.core.exception.WalletNotFoundException;
 import com.globo.wallet.core.port.in.WalletQueryPort;
 import com.globo.wallet.core.port.in.WalletTransactionPort;
 import com.globo.wallet.core.usecase.transaction.ProcessKafkaTransactionUseCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +20,12 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransactionUseCase {
-
-    private static final Logger log = LoggerFactory.getLogger(ProcessKafkaTransactionUseCaseImpl.class);
 
     private final WalletQueryPort walletQueryPort;
     private final WalletTransactionPort walletTransactionPort;
-
-    public ProcessKafkaTransactionUseCaseImpl(WalletQueryPort walletQueryPort, WalletTransactionPort walletTransactionPort) {
-        this.walletQueryPort = walletQueryPort;
-        this.walletTransactionPort = walletTransactionPort;
-    }
 
     @Override
     @Transactional
