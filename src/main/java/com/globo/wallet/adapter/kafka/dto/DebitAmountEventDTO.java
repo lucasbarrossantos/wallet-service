@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @ToString
@@ -11,7 +12,7 @@ import java.util.UUID;
 @Setter
 public class DebitAmountEventDTO {
     private UUID userId;
-    private Double amount;
+    private BigDecimal amount;
     private String description;
     private UUID subscriptionId;
 }

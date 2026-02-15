@@ -68,7 +68,7 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
         log.info("Processing debit amount event: {}", event);
 
         Wallet wallet = getWalletOrThrow(event.getUserId());
-        BigDecimal amount = BigDecimal.valueOf(event.getAmount());
+        BigDecimal amount = event.getAmount();
 
         if (wallet.getBalance().compareTo(amount) < 0) {
             log.error("Saldo insuficiente para débito: {}. Saldo atual: {}", amount, wallet.getBalance());
@@ -76,12 +76,14 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
         }
 
         walletTransactionPort.debit(wallet, amount, event.getDescription(), TransactionType.DEBIT);
-        updateSubscriptionStatus(
-                event.getSubscriptionId(),
-                ACTIVE.name(),
-                wallet,
-                amount
-        );
+        if (event.getSubscriptionId() != null) {
+            updateSubscriptionStatus(
+                    event.getSubscriptionId(),
+                    ACTIVE.name(),
+                    wallet,
+                    amount
+            );
+        }
     }
 
     @Override
@@ -90,14 +92,16 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
         log.info("Processing credit refund event: {}", event);
 
         Wallet wallet = getWalletOrThrow(event.getUserId());
-        BigDecimal amount = BigDecimal.valueOf(event.getAmount());
+        BigDecimal amount = event.getAmount();
         walletTransactionPort.credit(wallet, amount, event.getDescription(), TransactionType.CREDIT);
-        updateSubscriptionStatus(
-                event.getSubscriptionId(),
-                ACTIVE.name(),
-                wallet,
-                amount
-        );
+        if (event.getSubscriptionId() != null) {
+            updateSubscriptionStatus(
+                    event.getSubscriptionId(),
+                    ACTIVE.name(),
+                    wallet,
+                    amount
+            );
+        }
     }
 
     private Wallet getWalletOrThrow(UUID userId) {
@@ -126,6 +130,9 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
             String status,
             Wallet wallet,
             BigDecimal amount) {
+        if (subscriptionId == null) {
+            return;
+        }
         try {
             subscriptionClient.updateSubscriptionStatus(new UpdateSubscriptionStatusRequest(subscriptionId, status));
             log.info("Subscription status updated to {} for subscriptionId {}", status, subscriptionId);
