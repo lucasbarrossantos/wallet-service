@@ -7,7 +7,7 @@ import com.globo.wallet.core.domain.Wallet;
 import com.globo.wallet.core.domain.enums.TransactionType;
 import com.globo.wallet.core.exception.InsufficientBalanceException;
 import com.globo.wallet.core.exception.WalletNotFoundException;
-import com.globo.wallet.core.port.in.WalletQueryPort;
+import com.globo.wallet.core.port.in.GetWalletByUserIdPort;
 import com.globo.wallet.core.port.in.WalletTransactionPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 
 class ProcessKafkaTransactionUseCaseImplTest {
     @Mock
-    private WalletQueryPort walletQueryPort;
+    private GetWalletByUserIdPort getWalletByUserIdPort;
     @Mock
     private WalletTransactionPort walletTransactionPort;
     @Mock
@@ -33,7 +33,7 @@ class ProcessKafkaTransactionUseCaseImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        useCase = new ProcessKafkaTransactionUseCaseImpl(walletQueryPort, walletTransactionPort, subscriptionClient);
+        useCase = new ProcessKafkaTransactionUseCaseImpl(getWalletByUserIdPort, walletTransactionPort, subscriptionClient);
     }
 
     @Test
@@ -46,7 +46,7 @@ class ProcessKafkaTransactionUseCaseImplTest {
         event.setDescription("desc");
         event.setSubscriptionId(subscriptionId);
         Wallet wallet = mock(Wallet.class);
-        when(walletQueryPort.findByUserId(userId)).thenReturn(wallet);
+        when(getWalletByUserIdPort.execute(userId)).thenReturn(wallet);
         when(wallet.getBalance()).thenReturn(new BigDecimal("100.00"));
         ArgumentCaptor<UpdateSubscriptionStatusRequest> captor = ArgumentCaptor.forClass(UpdateSubscriptionStatusRequest.class);
         useCase.processDebitSubscriptionPlan(event);
@@ -65,7 +65,7 @@ class ProcessKafkaTransactionUseCaseImplTest {
         event.setDescription("desc");
         event.setSubscriptionId(subscriptionId);
         Wallet wallet = mock(Wallet.class);
-        when(walletQueryPort.findByUserId(userId)).thenReturn(wallet);
+        when(getWalletByUserIdPort.execute(userId)).thenReturn(wallet);
         when(wallet.getBalance()).thenReturn(new BigDecimal("1.00"));
         ArgumentCaptor<UpdateSubscriptionStatusRequest> captor = ArgumentCaptor.forClass(UpdateSubscriptionStatusRequest.class);
         assertThrows(InsufficientBalanceException.class, () -> useCase.processDebitSubscriptionPlan(event));
@@ -79,7 +79,7 @@ class ProcessKafkaTransactionUseCaseImplTest {
         DebitSubscriptionPlanEventDTO event = new DebitSubscriptionPlanEventDTO();
         event.setUserId(userId);
         event.setPlan("BASIC");
-        when(walletQueryPort.findByUserId(userId)).thenReturn(null);
+        when(getWalletByUserIdPort.execute(userId)).thenReturn(null);
         assertThrows(WalletNotFoundException.class, () -> useCase.processDebitSubscriptionPlan(event));
         verifyNoInteractions(subscriptionClient);
     }

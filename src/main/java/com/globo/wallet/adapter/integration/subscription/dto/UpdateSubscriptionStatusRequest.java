@@ -10,5 +10,5 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UpdateSubscriptionStatusRequest {
     private UUID subscriptionId;
-    private String status; // ACTIVE or PAYMENT_FAILED
+    private String status;
 }

@@ -10,7 +10,7 @@ import com.globo.wallet.core.domain.enums.TransactionType;
 import com.globo.wallet.core.exception.BusinessException;
 import com.globo.wallet.core.exception.InsufficientBalanceException;
 import com.globo.wallet.core.exception.WalletNotFoundException;
-import com.globo.wallet.core.port.in.WalletQueryPort;
+import com.globo.wallet.core.port.in.GetWalletByUserIdPort;
 import com.globo.wallet.core.port.in.WalletTransactionPort;
 import com.globo.wallet.core.usecase.transaction.ProcessKafkaTransactionUseCase;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import static com.globo.wallet.adapter.kafka.dto.SubscriptionStatus.PAYMENT_FAIL
 @RequiredArgsConstructor
 public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransactionUseCase {
 
-    private final WalletQueryPort walletQueryPort;
+    private final GetWalletByUserIdPort getWalletByUserIdPort;
     private final WalletTransactionPort walletTransactionPort;
     private final SubscriptionClient subscriptionClient;
 
@@ -58,13 +58,7 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
 
             status = ACTIVE.name();
         } finally {
-
-            try {
-                subscriptionClient.updateSubscriptionStatus(new UpdateSubscriptionStatusRequest(event.getSubscriptionId(), status));
-                log.info("Subscription status updated to {} for subscriptionId {}", status, event.getSubscriptionId());
-            } catch (Exception ex) {
-                log.error("Failed to update subscription status for subscriptionId {}: {}", event.getSubscriptionId(), ex.getMessage());
-            }
+            updateSubscriptionStatus(event.getSubscriptionId(), status, wallet, amount);
         }
     }
 
@@ -82,6 +76,12 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
         }
 
         walletTransactionPort.debit(wallet, amount, event.getDescription(), TransactionType.DEBIT);
+        updateSubscriptionStatus(
+                event.getSubscriptionId(),
+                ACTIVE.name(),
+                wallet,
+                amount
+        );
     }
 
     @Override
@@ -92,11 +92,17 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
         Wallet wallet = getWalletOrThrow(event.getUserId());
         BigDecimal amount = BigDecimal.valueOf(event.getAmount());
         walletTransactionPort.credit(wallet, amount, event.getDescription(), TransactionType.CREDIT);
+        updateSubscriptionStatus(
+                event.getSubscriptionId(),
+                ACTIVE.name(),
+                wallet,
+                amount
+        );
     }
 
     private Wallet getWalletOrThrow(UUID userId) {
 
-        Wallet wallet = walletQueryPort.findByUserId(userId);
+        Wallet wallet = getWalletByUserIdPort.execute(userId);
 
         if (wallet == null) {
             log.error("Wallet not found for userId: {}", userId);
@@ -108,10 +114,26 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
 
     private BigDecimal getPlanAmount(String plan) {
         return switch (plan) {
-            case "BASIC" -> new BigDecimal("9.90");
-            case "PREMIUM" -> new BigDecimal("19.90");
-            case "FAMILY" -> new BigDecimal("29.90");
+            case "BASIC" -> new BigDecimal("19.90");
+            case "PREMIUM" -> new BigDecimal("39.90");
+            case "FAMILY" -> new BigDecimal("59.90");
             default -> throw new BusinessException("Plano inválido: " + plan);
         };
+    }
+
+    private void updateSubscriptionStatus(
+            UUID subscriptionId,
+            String status,
+            Wallet wallet,
+            BigDecimal amount) {
+        try {
+            subscriptionClient.updateSubscriptionStatus(new UpdateSubscriptionStatusRequest(subscriptionId, status));
+            log.info("Subscription status updated to {} for subscriptionId {}", status, subscriptionId);
+        } catch (Exception ex) {
+            log.error("Failed to update subscription status for subscriptionId {}: {}", subscriptionId, ex.getMessage());
+            walletTransactionPort.credit(wallet, amount,
+                    "Reembolso por falha na atualização do status da assinatura",
+                    TransactionType.CREDIT);
+        }
     }
 }

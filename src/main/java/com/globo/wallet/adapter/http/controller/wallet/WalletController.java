@@ -15,6 +15,7 @@ import com.globo.wallet.adapter.http.dto.wallet.WalletResponse;
 import com.globo.wallet.adapter.http.mapper.WalletHttpMapper;
 import com.globo.wallet.core.port.in.wallet.CreateWalletPort;
 import com.globo.wallet.core.port.in.wallet.GetWalletBalancePort;
+import com.globo.wallet.core.port.in.GetWalletByUserIdPort;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class WalletController {
     private final CreateWalletPort createWalletPort;
     private final WalletHttpMapper walletHttpMapper;
     private final GetWalletBalancePort getWalletBalancePort;
+    private final GetWalletByUserIdPort getWalletByUserIdPort;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -43,5 +45,12 @@ public class WalletController {
     public BalanceResponse getBalance(@PathVariable UUID userId) {
         var wallet = getWalletBalancePort.getBalanceByUserId(userId);
         return walletHttpMapper.toBalanceResponse(wallet);
+    }
+
+    @GetMapping("/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public WalletResponse getWallet(@PathVariable UUID userId) {
+        var wallet = getWalletByUserIdPort.execute(userId);
+        return walletHttpMapper.toResponse(wallet);
     }
 }
