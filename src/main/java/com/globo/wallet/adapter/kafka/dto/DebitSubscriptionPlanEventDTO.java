@@ -13,4 +13,5 @@ public class DebitSubscriptionPlanEventDTO {
     private UUID userId;
     private String plan;
     private String description;
+    private UUID subscriptionId;
 }

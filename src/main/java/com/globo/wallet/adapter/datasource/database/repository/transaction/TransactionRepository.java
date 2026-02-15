@@ -1,4 +1,4 @@
-package com.globo.wallet.adapter.datasource.repository.transaction;
+package com.globo.wallet.adapter.datasource.database.repository.transaction;
 
 import java.util.List;
 import java.util.UUID;

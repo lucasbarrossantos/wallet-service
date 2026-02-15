@@ -3,10 +3,10 @@ package com.globo.wallet.adapter.datasource.database.adapter.transaction;
 import java.util.List;
 import java.util.UUID;
 
+import com.globo.wallet.adapter.datasource.database.repository.transaction.TransactionRepository;
 import org.springframework.stereotype.Component;
 
 import com.globo.wallet.adapter.datasource.database.mapper.TransactionMapper;
-import com.globo.wallet.adapter.datasource.repository.transaction.TransactionRepository;
 import com.globo.wallet.core.domain.Transaction;
 import com.globo.wallet.core.port.out.transaction.TransactionRepositoryPort;
 

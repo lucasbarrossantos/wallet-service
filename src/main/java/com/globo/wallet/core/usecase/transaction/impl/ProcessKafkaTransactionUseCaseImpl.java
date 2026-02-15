@@ -1,5 +1,7 @@
 package com.globo.wallet.core.usecase.transaction.impl;
 
+import com.globo.wallet.adapter.integration.subscription.SubscriptionClient;
+import com.globo.wallet.adapter.integration.subscription.dto.UpdateSubscriptionStatusRequest;
 import com.globo.wallet.adapter.kafka.dto.CreditRefundEventDTO;
 import com.globo.wallet.adapter.kafka.dto.DebitAmountEventDTO;
 import com.globo.wallet.adapter.kafka.dto.DebitSubscriptionPlanEventDTO;
@@ -19,13 +21,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import static com.globo.wallet.adapter.kafka.dto.SubscriptionStatus.ACTIVE;
+import static com.globo.wallet.adapter.kafka.dto.SubscriptionStatus.PAYMENT_FAILED;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransactionUseCase {
 
     private final WalletQueryPort walletQueryPort;
     private final WalletTransactionPort walletTransactionPort;
+    private final SubscriptionClient subscriptionClient;
 
     @Override
     @Transactional
@@ -34,12 +40,32 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
 
         Wallet wallet = getWalletOrThrow(event.getUserId());
         BigDecimal amount = getPlanAmount(event.getPlan());
+        String status = PAYMENT_FAILED.name();
 
-        if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientBalanceException("Saldo insuficiente para o plano: " + event.getPlan());
+        try {
+
+            if (wallet.getBalance().compareTo(amount) < 0) {
+                log.error("Insufficient balance for userId: {}, required: {}, available: {}", event.getUserId(), amount, wallet.getBalance());
+                throw new InsufficientBalanceException("Saldo insuficiente para o plano: " + event.getPlan());
+            }
+
+            walletTransactionPort.debit(wallet, amount, event.getDescription(), TransactionType.DEBIT);
+
+            if (event.getSubscriptionId() == null) {
+                log.warn("Subscription ID is null for userId: {}, cannot update subscription status", event.getUserId());
+                return;
+            }
+
+            status = ACTIVE.name();
+        } finally {
+
+            try {
+                subscriptionClient.updateSubscriptionStatus(new UpdateSubscriptionStatusRequest(event.getSubscriptionId(), status));
+                log.info("Subscription status updated to {} for subscriptionId {}", status, event.getSubscriptionId());
+            } catch (Exception ex) {
+                log.error("Failed to update subscription status for subscriptionId {}: {}", event.getSubscriptionId(), ex.getMessage());
+            }
         }
-
-        walletTransactionPort.debit(wallet, amount, event.getDescription(), TransactionType.DEBIT);
     }
 
     @Override
@@ -51,6 +77,7 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
         BigDecimal amount = BigDecimal.valueOf(event.getAmount());
 
         if (wallet.getBalance().compareTo(amount) < 0) {
+            log.error("Saldo insuficiente para débito: {}. Saldo atual: {}", amount, wallet.getBalance());
             throw new InsufficientBalanceException("Saldo insuficiente para débito: " + event.getAmount());
         }
 
@@ -72,6 +99,7 @@ public class ProcessKafkaTransactionUseCaseImpl implements ProcessKafkaTransacti
         Wallet wallet = walletQueryPort.findByUserId(userId);
 
         if (wallet == null) {
+            log.error("Wallet not found for userId: {}", userId);
             throw new WalletNotFoundException("Carteira não encontrada para o usuário: " + userId);
         }
 
