@@ -53,15 +53,13 @@ class CreateWalletUseCaseTest {
 
     @Test
     void execute_shouldCreateWallet_whenValidInput() {
-        // Given
+
         when(subscriptionClient.getUserById(userId)).thenReturn(null); // Assuming it returns something, but we don't care
         when(walletRepositoryPort.findByUserId(userId)).thenReturn(Optional.empty());
         when(walletRepositoryPort.save(any(Wallet.class))).thenReturn(wallet);
 
-        // When
         Wallet result = createWalletUseCase.execute(wallet);
 
-        // Then
         assertThat(result).isEqualTo(wallet);
         verify(subscriptionClient).getUserById(userId);
         verify(walletRepositoryPort).findByUserId(userId);
@@ -71,10 +69,9 @@ class CreateWalletUseCaseTest {
 
     @Test
     void execute_shouldThrowUserNotFoundException_whenUserNotFound() {
-        // Given
+
         when(subscriptionClient.getUserById(userId)).thenThrow(FeignException.NotFound.class);
 
-        // When & Then
         assertThatThrownBy(() -> createWalletUseCase.execute(wallet))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessage("Usuário não encontrado no serviço de assinaturas");
@@ -86,10 +83,9 @@ class CreateWalletUseCaseTest {
 
     @Test
     void execute_shouldThrowBusinessException_whenSubscriptionClientError() {
-        // Given
+
         when(subscriptionClient.getUserById(userId)).thenThrow(new RuntimeException("Service error"));
 
-        // When & Then
         assertThatThrownBy(() -> createWalletUseCase.execute(wallet))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Erro ao validar usuário no serviço de assinaturas");
@@ -101,10 +97,9 @@ class CreateWalletUseCaseTest {
 
     @Test
     void execute_shouldThrowBusinessException_whenBalanceBelowMinimum() {
-        // Given
+
         wallet.setBalance(new BigDecimal("0.05"));
 
-        // When & Then
         assertThatThrownBy(() -> createWalletUseCase.execute(wallet))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Saldo mínimo para criação de carteira é R$ 0,10");
@@ -116,11 +111,10 @@ class CreateWalletUseCaseTest {
 
     @Test
     void execute_shouldThrowWalletAlreadyExistsException_whenWalletExists() {
-        // Given
+
         when(subscriptionClient.getUserById(userId)).thenReturn(null);
         when(walletRepositoryPort.findByUserId(userId)).thenReturn(Optional.of(wallet));
 
-        // When & Then
         assertThatThrownBy(() -> createWalletUseCase.execute(wallet))
                 .isInstanceOf(WalletAlreadyExistsException.class)
                 .hasMessage("Usuário já possui uma carteira cadastrada");
